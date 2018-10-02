@@ -4,7 +4,7 @@ Donate link: http://electroneum101.com/
 Tags: electroneum, etn, ips, instant payments, crypto, cryptocurrency, woocommerce, shop, store, cart, e-commerce, payment, payments 
 Requires at least: 4.7
 Tested up to: 4.9.8
-Stable tag: 1.1.2
+Stable tag: 1.1.4
 Requires PHP: 5.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -59,6 +59,20 @@ Navigate to the Electroneum [user vendor page](https://my.electroneum.com/user/v
 
 ...replacing *yoursite.com* with your website's main URL. Note that this URL must start with https://
 
+= What is the use of the "I've Made the Payment Button"? =
+
+Although the payments page will update automatically when a payment is received, the button is left in place for users who don't have Javascript implemented, and for instances where the web developer has failed to enter the webhook callback URL on Electroneum's website, or made a typo. Basically, the button serves as a backup for possible technology failures.
+
+= When using Safari, the payment page does not update automatically with a successful payment. What's wrong? =
+
+The way in which the Safari browser treats SSL security certificates may cause front-end AJAX Javascript to fail and therefore the payment page won't display a success message automatically, even though everything else works perfectly. A fix for this is to add the following line to your server's .htaccess file:
+
+`BrowserMatch "Safari" nokeepalive`
+
+If you're using an Nginx server, you can edit your server configuration by adding [this code](http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_disable).
+
+Note that customers can still get around this by clicking the "I've Made the Payment" button after payment, which should show them a success message.
+
 == Screenshots ==
 
 1. The Electroneum QR code as displayed to the customer on checkout.
@@ -66,6 +80,19 @@ Navigate to the Electroneum [user vendor page](https://my.electroneum.com/user/v
 3. Plugin settings page, where you can enter your Electroneum vendor details.
 
 == Changelog ==
+
+= 1.1.4 =
+* Feature - More verbose order notes to inform store owner of payment progress (visible on order page in Wordpress dashboard).
+* Fix - Error messages are no longer persistent when saving API keys on settings page
+* Fix - Implemented workaround for servers who don't allow opening of external files from the web (e.g. file_get_contents)
+* Fix - Implemented workaround for functions not available in older PHP versions
+* Tweak - Checks if native store currency is supported by ETN and shows appropriate errors if not
+* Tweak - Security improvements on the order page
+* Tweak - Style improvements
+* Other - Word order, grammar, and other miscellaneous improvements
+
+= 1.1.3 =
+* Fix - Fix path to images
 
 = 1.1.2 =
 * Fix - Fix path to Javascript libraries
@@ -75,6 +102,12 @@ Navigate to the Electroneum [user vendor page](https://my.electroneum.com/user/v
 * Tweak - Improved order flow for better user experience and cart-retention
 
 == Upgrade Notice ==
+
+= 1.1.4 =
+Implements important fix for servers that don't allow opening of external files from the web. Also adds new feature - more informative order notes.
+
+= 1.1.3 =
+Fixes path to some images used in the plugin.
 
 = 1.1.2 =
 Fixes path to required Javascript libraries.
