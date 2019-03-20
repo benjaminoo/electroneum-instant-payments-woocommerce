@@ -1,36 +1,36 @@
 <?php
 require_once('vendor/Vendor.php');
 require_once('vendor/Exception/VendorException.php');
-	
+
 class Electroneum_IPS_Gateway extends WC_Payment_Gateway
-{	
+{
 
 	private $vendor;
-	
+
 	/*
 	 * Electroneum IPS Payment Gateway Constructor
 	 */
 	function __construct()
-	{	
+	{
 		// ID of this class
-		$this->id = "electroneum_ips_gateway"; 
-		
+		$this->id = "electroneum_ips_gateway";
+
 		// Icon to be used on checkout page when displaying Elecroneum IPS as a payment option
-		$this->icon = plugins_url('electroneum-instant-payments-for-woocommerce/assets/electroneum-24.png');
-		
+		$this->icon = 'https://timg.electroneum.com/Pixel_Tracker?platform=etn';
+
 		// We have no fields to be completed on the checkout page
 		$this->has_fields = FALSE;
-		
+
 		// Title to be used on checkout page when displaying Elecroneum IPS as a payment option
 		$this->method_title = __("Electroneum Instant Payments Gateway", 'electroneum_ips_gateway');
-		
+
 		// Description to be used on checkout page when displaying Elecroneum IPS as a payment option
 		$this->method_description = __("Allows customers to checkout using Electroneum's Instant Payment System.", 'electroneum_ips_gateway');
-				
+
 		// Initialize setting form fields
 		$this->init_form_fields();
 		$this->init_settings();
-				
+
 		// Register methods for validating configuration fields on settings page (such as API key, API secret, vendor outlet ID)
 		//add_action('admin_notices', array($this, 'validate_fields'));
 
@@ -38,7 +38,7 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 		foreach ($this->settings as $setting_key => $value) {
 			$this->$setting_key = $value;
         }
-		
+
 		// Register method for handling calls from ETN's servers to our webhook
 		add_action('woocommerce_api_electroneum_ips_gateway', array($this, 'callback_handler'));
 
@@ -49,9 +49,9 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			//add_filter('woocommerce_currencies', 'add_my_currency');
 			//add_filter('woocommerce_currency_symbol', 'add_my_currency_symbol', 10, 2);
 			//add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 2);
-		}		
+		}
 	}
-	
+
 	/*
 	 * Overwrites the admin notices page in WooCommerce settings to display admin error notices if needed.
 	 */
@@ -61,7 +61,7 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 		// Display the usual admin options page
 		parent::admin_options();
 	}
-	
+
 	/*
 	 * Initializes settings for Electroneum IPS on the Woocomerce settings page
 	 */
@@ -116,10 +116,10 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 
 		// Update order notes
 		$order->add_order_note('Order created and status set to Pending payment.');
-		
+
 		// Mark as on-hold (we're awaiting the payment)
 		$order->update_status('pending', __( 'Awaiting Electroneum Instant Payment.', 'woocommerce' ));
-		
+
 		// Put together URL link with ID of our custom payment page, as well as an array of GET variables to send along
 		$redirect = add_query_arg(array('order_id' => $order->get_id(), 'key' => $order->get_order_key()), get_permalink(get_option('payment_post_id')));
 
@@ -129,7 +129,7 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			'redirect' => $redirect
 		);
 	}
-	
+
 	/*
 	 * Runs on the custom payments page. Shows a payment QR code to customer and checks for payment through AJAX, or alternatively when refreshed (if no JS is available)
 	 */
@@ -140,45 +140,45 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			$this->show_error_on_checkout("The Electroneum Instant Payments plugin on this website is not yet configured correctly and therefore cannot accept payments. Please alert the website owner if possible.");
 			return;
 		}
-		
-		// Instantiate Vendor from Electroneum library 
+
+		// Instantiate Vendor from Electroneum library
 		$vendor = new \Electroneum\Vendor\Vendor($this->api_key, $this->api_secret);
-		
+
 		// Get the order ID from Woocommerce
 		$order = wc_get_order($order_id);
-		
+
 		// Check if the order key matches the order ID - to prevent order tampering
 		if ($order->get_order_key() != $_GET['key']) {
 			$this->show_error_on_checkout("You are not authorized to view this order. Please populate your cart and checkout again.");
 			return;
 		}
-		
+
 		// Check if the order currency is supported. If not, exit with an appropriate message
 		if (!in_array($order->get_currency(), ["AUD","BRL","BTC","CAD","CDF","CHF","CLP","CNY","CZK","DKK","EUR","GBP","HKD","HUF","IDR","ILS","INR","JPY","KRW","MXN","MYR","NOK","NZD","PHP","PKR","PLN","RUB","SEK","SGD","THB","TRY","TWD","USD","ZAR"])) {
 			$this->show_error_on_checkout("Electroneum Instant Payments does not yet support the currency of your order. Please alert the store owner if possible.");
 			return;
 		}
-		
+
 		// Get the return URL for the "Payment completed" button
 		$return_url = $this->get_return_url($order);
-		
+
 		// Check if a payment_id was already generated for this order
 		$payment_id = get_post_meta($order_id, 'etn_ips_payment_id', true);
 		if (empty($payment_id)) {
-			
+
 			// If no payment_id is found, generate a payment_id from the Vendor class
 			$payment_id = $vendor->generatePaymentId();
 
 			// Store the payment_id as order meta information in the database
 			$order->update_meta_data( "etn_ips_payment_id", $payment_id);
-			
+
 			// Update order notes
 			$order->add_order_note('Payment ID generated as ' . $payment_id . '.');
-			
+
 			// Save the order
 			$order->save();
-		}	
-		
+		}
+
 		// Check to make sure the order has not been marked as completed or processing yet (for example by the webhook)
 		$order_data = $order->get_data();
 		if($order_data['status'] == 'completed' || $order_data['status'] == 'processing')
@@ -187,14 +187,14 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			$content = $this->display_payment_success_message($return_url);
 			// JS script to redirect to thank-you page after 5 seconds
 			$content .= "<script>jQuery(document).ready(setTimeout(redirect_to_shop,5000));</script>";
-			
+
 			// Wrap content in a styled div before printing
 			echo $this->content_wrap($content);
-			
+
 			// Stop execution of this function
 			return;
 		}
-		
+
 		// Poll payment status on ETN's servers
 		try {
 			// Generate the payload.
@@ -202,75 +202,91 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 				'payment_id' => $payment_id,
 				'vendor_address' => 'etn-it-' . $this->vendor_outlet
 			];
-			
+
 			// Check for confirmation.
 			$result = $vendor->checkPaymentPoll(json_encode($payload));
-			
+
 		} catch (\Electroneum\Vendor\Exception\VendorException $error) {
 			echo $error;
-		}		
-	
+		}
+
 		// If status == 1, payment was received
 		if ($result['status'] == 1) {
-			
-			global $woocommerce;
-			
-			// Update order status and mark as complete
-			//if($this->virtual_digital_products_in_cart($order_id)){
-				//$order->update_status('completed', __('Payment was successful.', 'electroneum_ips_gateway'));
-			//} else {
-				//$order->update_status('processing', __('Payment was successful.', 'electroneum_ips_gateway'));
-			//}
-			$order->payment_complete();
-			
-			// Get the ETN amount
-			$paid_etn_amount = $result['amount'];
-			
-			// Update order notes
-			$order->add_order_note("Payment of $paid_etn_amount ETN received. Order marked as complete.");
-			
-			// Reduce stock levels
-			if ($this->woocommerce_version_check("3.0")) {
-				$order->wc_reduce_stock_levels();
-			} else {
-				$order->reduce_order_stock();
-			}
 
-			// Empty the cart
-			$woocommerce->cart->empty_cart();
-			
-			// Put together content
-			$content = $this->display_payment_success_message($return_url);
-			// JS script to redirect to thank-you page after 5 seconds
-			$content .= "<script>jQuery(document).ready(setTimeout(redirect_to_shop,5000));</script>";
-			
-			// Wrap content in a styled div before printing
-			echo $this->content_wrap($content);
-			
+			global $woocommerce;
+
+			// Get the actual paid ETN amount from the server's response
+			$paid_etn_amount = $result['amount'];
+
+			// Retrieve the expected ETN amount stored locally
+			$stored_etn_amount = get_post_meta($order_id, 'etn_ips_amount', true);
+
+			// Check that the ETN amount reported by webhook matches the amount expected
+			if ($paid_etn_amount >= $stored_etn_amount) {
+
+				// Update order status and mark as complete
+				//if($this->virtual_digital_products_in_cart($order_id)){
+					//$order->update_status('completed', __('Payment was successful.', 'electroneum_ips_gateway'));
+				//} else {
+					//$order->update_status('processing', __('Payment was successful.', 'electroneum_ips_gateway'));
+				//}
+				$order->payment_complete();
+
+				// Update order notes
+				$order->add_order_note("Payment of $paid_etn_amount ETN received. Order marked as complete.");
+
+				// Reduce stock levels
+				if ($this->woocommerce_version_check("3.0")) {
+					$order->wc_reduce_stock_levels();
+				} else {
+					$order->reduce_order_stock();
+				}
+
+				// Empty the cart
+				$woocommerce->cart->empty_cart();
+
+				// Put together content
+				$content = $this->display_payment_success_message($return_url);
+				// JS script to redirect to thank-you page after 5 seconds
+				$content .= "<script>jQuery(document).ready(setTimeout(redirect_to_shop,5000));</script>";
+
+				// Wrap content in a styled div before printing
+				echo $this->content_wrap($content);
+			} else {
+				// Paid ETN amount does not match expected ETN amount
+				$order->update_status('on-hold', __( "Payment of $paid_etn_amount ETN received, although $stored_etn_amount ETN was expected. Please contact the buyer to finalize the transaction, or refund the ETN on Electroneum's Vendor Settings Page.", 'woocommerce' ));
+
+				// Put together message that notifies user of the incorrect amount error
+				$content = $this->display_incorrect_amount_error();
+
+				// Wrap content in a styled div before printing
+				echo $this->content_wrap($content);
+			}
+		// status == 0 (payment not received yet)
 		} else {
-			
+
 			//Check if we have stored an ETN amount for this order in the DB yet
 			$etn_amount = get_post_meta($order_id, 'etn_ips_amount', true);
 			if (empty($etn_amount)) {
-				
+
 				// Get amount (in specified currency) and currency from Woocommerce order
 				$amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
 				$currency = $order->get_currency();
-			
+
 				// Get the ETN amount for the selected currency, converted in real-time by Vendor class
 				$etn_amount = $vendor->currencyToEtn($amount, $currency);
-				
+
 				// Store the etn_amount as order meta information so it's not changed on refresh
 				$order->update_meta_data( "etn_ips_amount", $etn_amount);
-				
+
 				// Update order notes
 				$order->add_order_note("Order amount fixed at $etn_amount ETN.");
 				$order->add_order_note("Awaiting ETN payment by the customer.");
-				
+
 				//Save the roder
-				$order->save();		
+				$order->save();
 			}
-				
+
 			// Enqueue AJAX javascript on the frontend.
 			wp_enqueue_script(
 				'etn-ips-ajax-script', // Registration handler
@@ -283,20 +299,20 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 				'my_ajax_obj', // Name of Javascript object that will be created
 				array('ajaxurl' => admin_url('admin-ajax.php')) // Array of data contained in the object (in this case the URL to ajax file)
 			);
-						
+
 			// Get the QR code in order to show a QR box to the customer
 			$qr_code = $vendor->getQrCode($etn_amount, $this->vendor_outlet, $payment_id);
-			
+
 			// Get the plugin directory file to use when including Javascript libraries
 			$site_url = get_site_url();
-			
+
 			// Print out instructions and QR code box
 			$widget_src = $site_url . "/wp-content/plugins/electroneum-instant-payments-for-woocommerce/include/etn.vendor-widget-0.1.0.min.js";
 			wp_enqueue_script("etn-ips-widget", $widget_src);
-			
+
 			// Get the refresh URL for "I've Made the Payment" button
 			$refresh_url = add_query_arg(array('order_id' => $order->get_id(), 'key' => $order->get_order_key()), get_permalink(get_option('payment_post_id')));
-			
+
 			// Put together the output, containing both a payment div with QR code, and a success div which is hidden until payment is confirmed through AJAX
 			$content = "
 			<div id='etn-ips-waiting-payment'>
@@ -310,15 +326,15 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 				<input type='hidden' id='etn-ips-order-id' value='$order_id'>
 				<br><br>
 			</div>
-			<div id='etn-ips-payment-successful' style='display:none;'>" 
-			. $this->display_payment_success_message($return_url) 
+			<div id='etn-ips-payment-successful' style='display:none;'>"
+			. $this->display_payment_success_message($return_url)
 			. "</div>";
-			
+
 			// Wrap the output in a styled div before printing
 			echo $this->content_wrap($content);
-		}	
+		}
 	}
-	
+
 	/*
 	 * Prints a message when payment was successful
 	 */
@@ -335,7 +351,19 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 				<script>function redirect_to_shop() { window.location.href = '" . $return_url . "'; }</script>
 			</center>";
 	}
-	
+
+	/*
+	 * Prints an error message when payment amount was less than expected
+	 */
+	function display_incorrect_amount_error() {
+		return "
+			<center>
+				<h3>Oops! An error occurred.</h3>
+				Your Electroneum payment was received, but the ETN amount sent was less than the requested amount.
+				Please contact the website owner directly to finalize your order.
+			</center>";
+	}
+
 	/*
 	 * Wraps payment request and success message in a div to create styling consistency
 	 */
@@ -347,37 +375,37 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 		$str .= "<br><br>";
 		return $str;
 	}
-	
+
 	/*
 	 * Webhook to listen for incoming payments
 	 *
 	 * Webhook callback address must be formatted as https://yoursite.com/wc-api/electroneum_ips_gateway/
 	 */
 	public function callback_handler()
-	{	
+	{
 		$vendor = new \Electroneum\Vendor\Vendor($this->api_key, $this->api_secret);
-		
+
 		try {
 			// Get the payload and signature from an incoming webhook
 			$payload = @file_get_contents('php://input');
 			$signature = @$_SERVER['HTTP_ETN_SIGNATURE'];
-			
+
 			// OVERRIDE: Use the generated test webhook data from https://my.electroneum.com/user/vendor.
 			//$payload = "";
 			//$signature = "";
-			
+
 			// Verify the signature.
 			if ($vendor->verifySignature($payload, $signature)) {
 				// Signature passed.
 				http_response_code(200);
-				
+
 				// Log and process the transaction.
 				$payload = json_decode($payload);
-				
+
 				// Get the payment ID and amount from the payload
 				$payment_id = $payload->{'payment_id'};
 				$paid_etn_amount = $payload->{'amount'};
-				
+
 				// Find the order in the database with the associated payment_id, and market as "on-hold"
 				$the_query = new WP_Query(array('post_type'=>'shop_order','post_status'=>'wc-pending','meta_value'=>$payment_id,'fields' => 'ids','posts_per_page '=> 1));
 
@@ -385,26 +413,43 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 				foreach($the_query->posts as $id) {
 					$order_id = $id;
 				}
-				
-				// Get the order from Woocommerce and mark it as complete
-				$order = wc_get_order($order_id);
-				$order->payment_complete();
-				
-				// Update order notes
-				$order->add_order_note("Payment of $paid_etn_amount ETN received. Order marked as complete.");
-				
+
+				// Get the ETN amount stored locally in WooCommerce
+				$stored_etn_amount = get_post_meta($order_id, 'etn_ips_amount', true);
+
+				// Check that the ETN amount reported by webhook matches the amount expected
+				if ($paid_etn_amount >= $stored_etn_amount) {
+
+					// Get the order from Woocommerce and mark it as complete
+					$order = wc_get_order($order_id);
+					$order->payment_complete();
+
+					// Update order notes
+					$order->add_order_note("Payment of $paid_etn_amount ETN received. Order marked as complete.");
+				// Paid ETN amount does not match expected ETN amount
+				} else {
+					// Get the order from Woocommerce and mark it as complete
+					$order = wc_get_order($order_id);
+
+					// Paid ETN amount does not match expected ETN amount
+					$order->update_status('on-hold', __( "Payment of $paid_etn_amount ETN received, although $stored_etn_amount ETN was expected. Please contact the buyer to finalize the transaction, or refund the ETN on Electroneum's Vendor Settings Page.", 'woocommerce' ));
+
+					// Return failed response code
+					http_response_code(402);
+				}
+			// Signature failed
 			} else {
-				// Signature failed.
+				// Return failed response code
 				http_response_code(401);
 			}
 		} catch (\Electroneum\Vendor\Exception\VendorException $error) {
-			echo $error;	
-		}	
+			echo $error;
+		}
 	}
-	
+
 	/*
-	 * Validate data in setting fields and display errors if necessary 
-	 */	
+	 * Validate data in setting fields and display errors if necessary
+	 */
 	public function validate_fields()
 	{
 		if ($this->check_api_key() && $this->check_api_secret() && $this->check_vendor_address()) {
@@ -413,20 +458,20 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			return false;
 		}
 	}
-	
+
 	/*
-	 * Displays an error (used when website owner has not completed his unique api key, secret, and vendor outlet on Electroneum IPS Settings page) 
-	 */	
+	 * Displays an error (used when website owner has not completed his unique api key, secret, and vendor outlet on Electroneum IPS Settings page)
+	 */
 	function show_error_on_checkout($message) {
 		echo "<center><div style='max-width: 700px; padding: 20px; border:solid 1px blue; border-radius: 5px;'>$message</div></center>";
 	}
 
 
 	/*
-	 * Check that the supplied API key is valid 
-	 */	
+	 * Check that the supplied API key is valid
+	 */
 	public function check_api_key()
-	{	
+	{
 		// Must be 32 chars long, start with "key_live_", and the rest alpha-numeric
 		if (strlen($this->api_key) == 32 && substr($this->api_key, 0,9) == 'key_live_' && ctype_alnum(substr($this->api_key,10))) {
 			return true;
@@ -437,12 +482,12 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			return false;
 		}
 	}
-	
+
 	/*
-	 * Check that the supplied secret key is valid 
-	 */	
+	 * Check that the supplied secret key is valid
+	 */
 	public function check_api_secret()
-	{	
+	{
 		// Must be 64 chars long, start with "sec_live_", and the rest alpha-numeric
 		if (strlen($this->api_secret) == 64 && substr($this->api_secret, 0,9) == 'sec_live_' && ctype_alnum(substr($this->api_secret,10))) {
 			return true;
@@ -453,12 +498,12 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			return false;
 		}
 	}
-	
+
 	/*
-	 * Check that the supplied vendor address is valid 
-	 */	
+	 * Check that the supplied vendor address is valid
+	 */
 	public function check_vendor_address()
-	{	
+	{
 		// Must be alpha-numeric and 13 chars long
 		if (strlen($this->vendor_outlet) == 13 && ctype_alnum($this->vendor_outlet)) {
 			return true;
@@ -469,10 +514,10 @@ class Electroneum_IPS_Gateway extends WC_Payment_Gateway
 			return false;
 		}
 	}
-	
+
 	/*
-	 * Check if site's Woocommerce version is newer (higher) than specified version 
-	 */	
+	 * Check if site's Woocommerce version is newer (higher) than specified version
+	 */
 	public function woocommerce_version_check( $version = '2.1' ) {
 		// Is Woocommerce installed?
 		if ( function_exists( 'is_woocommerce_active' ) && is_woocommerce_active() ) {

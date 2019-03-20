@@ -3,7 +3,7 @@
 Plugin Name: Electroneum Instant Payments for WooCommerce
 Plugin URI: https://electroneum101.com/woocommerce-plugin/
 Description: Ads Electroneum Instant Payments as a payment method for Woocommerce. Provides customers with instant visual confirmation upon payment.
-Version: 1.1.4
+Version: 1.1.6
 Author: Electroneum101
 Author URI: http://electroneum101.com
 License: GPLv2 or later
@@ -23,18 +23,18 @@ add_action('plugins_loaded', 'electroneum_ips_gateway_init', 0);
 function electroneum_ips_gateway_init()
 {
 	global $woocommerce;
-	
+
     // Check if Woocommerce is installed
 	if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) return;
     if (!class_exists('WC_Payment_Gateway')) return;
-	
+
 	// Check if the order currency is supported. If not, do not register ETN as a payment method, and show a notice on the settings page
 	if (!in_array(get_woocommerce_currency(), ["AUD","BRL","BTC","CAD","CDF","CHF","CLP","CNY","CZK","DKK","EUR","GBP","HKD","HUF","IDR","ILS","INR","JPY","KRW","MXN","MYR","NOK","NZD","PHP","PKR","PLN","RUB","SEK","SGD","THB","TRY","TWD","USD","ZAR"])) {
 		// Show a notice and exit
 		add_action('admin_notices', 'show_error_currency_not_supported');
 		return;
 	}
-		
+
 	// Include our payment gateway
 	require_once('include/electroneum_ips_library.php');
 
@@ -77,7 +77,7 @@ function electroneum_ips_create_menu()
         'manage_options',											// Capability
         'admin.php?page=wc-settings&tab=checkout&section=electroneum_ips_gateway', // Menu slug
         '',															// Function
-        plugins_url('electroneum-instant-payments-for-woocommerce/assets/electroneum.png'),			// Icon URL  
+        plugins_url('electroneum-instant-payments-for-woocommerce/assets/electroneum.png'),			// Icon URL
         56 															// Position on menu
     );
 }
@@ -96,10 +96,10 @@ function electroneum_ips_plugin_action_links( $links ) {
  * AJAX call to check order status
  */
 function my_check_order_status() {
-	
+
 	// Load instance of Electroneum IPS Gateway
 	$gateway = new Electroneum_IPS_Gateway;
-	
+
 	// Get the order ID from the AJAX POST call
 	$order_id = $_POST['order_id'];
 
@@ -114,7 +114,7 @@ function my_check_order_status() {
 	} elseif ($order_data['status'] == 'pending') {
 		echo 0; // Payment not completed
 	}
-	
+
 	// Always end AJAX-printing scripts with die();
 	die();
 }
@@ -123,15 +123,15 @@ function my_check_order_status() {
  * Create a post using our custom post type - this helps us display a custom payment page
  */
 function create_electroneum_ips_payment_page() {
-	
+
 	global $wpdb;
-	
+
 	// Get the ID of our custom payments page from settings
 	$payment_post_id = get_option('payment_post_id');
-	
+
 	// Create a custom GUID (URL) for our custom for our payments page
 	$guid = home_url('/electroneum-ips/electroneum');
-	
+
 	// Check to see if the post ID returned has post_type = "electroneum-ips" and guid equal to one generated above
 	if ($payment_post_id && get_post_type($payment_post_id) == "electroneum_ips" && get_the_guid($payment_post_id) == $guid) {
 		// Post already created, so return
@@ -146,13 +146,13 @@ function create_electroneum_ips_payment_page() {
 			'comment_status' => 'closed',
 			'guid' => $guid,
 		);
-		
+
 		// Create the post
 		$payment_post_id = wp_insert_post($page_data);
-		
+
 		// Update our settings with the ID of the newly created post
 		$ppp = update_option('payment_post_id', $payment_post_id);
-	}	
+	}
 }
 
 /*
@@ -189,13 +189,13 @@ function electroneum_ips_payment_page_template($page_template) {
 	if (get_post_type() && get_post_type() === 'electroneum_ips') {
 		// Return our custom template file
 		return dirname(__FILE__) . '/templates/electroneum_ips_payment.php';
-	}	
+	}
 	// Return usual template file
 	return $page_template;
 }
 
 function show_error_currency_not_supported()
-{	
+{
 	if(is_admin() && $_GET['page'] == "wc-settings" && $_GET['section'] == "electroneum_ips_gateway") {
 		$wc_settings_url = home_url('/wp-admin/admin.php?page=wc-settings');
 		echo "<div class='notice notice-error is-dismissible'><p>Your store's currency is currently not supported by Electroneum Instant Payments. Please change it to a supported currency under <b>Currency Options</b> on the WooCommerce <a href='$wc_settings_url'>general settings page</a>. You can view a list of supported currencies on <a href='https://community.electroneum.com/t/using-the-etn-instant-payment-api/121' target='_blank'>this page</a>.</div>";

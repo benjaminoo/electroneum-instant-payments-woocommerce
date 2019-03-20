@@ -3,8 +3,8 @@ Contributors: electroneum101
 Donate link: http://electroneum101.com/
 Tags: electroneum, etn, ips, instant payments, crypto, cryptocurrency, woocommerce, shop, store, cart, e-commerce, payment, payments 
 Requires at least: 4.7
-Tested up to: 4.9.8
-Stable tag: 1.1.4
+Tested up to: 5.1.1
+Stable tag: 1.1.6
 Requires PHP: 5.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -81,6 +81,12 @@ Note that customers can still get around this by clicking the "I've Made the Pay
 
 == Changelog ==
 
+= 1.1.6 =
+* Fix - Replaces URL for QR code generator service following deprecation of Google's QR code server
+
+= 1.1.5 =
+* Fix - Implemented a fix that checks the ETN amount sent before confirmining the transaction
+
 = 1.1.4 =
 * Feature - More verbose order notes to inform store owner of payment progress (visible on order page in Wordpress dashboard).
 * Fix - Error messages are no longer persistent when saving API keys on settings page
@@ -102,6 +108,12 @@ Note that customers can still get around this by clicking the "I've Made the Pay
 * Tweak - Improved order flow for better user experience and cart-retention
 
 == Upgrade Notice ==
+
+= 1.1.6 =
+New URL for QR code generator service
+
+= 1.1.5 =
+Implements important fix that checks the amount of ETN sent before confiming the transaction.
 
 = 1.1.4 =
 Implements important fix for servers that don't allow opening of external files from the web. Also adds new feature - more informative order notes.
